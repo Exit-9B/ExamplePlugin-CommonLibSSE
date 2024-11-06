@@ -1,30 +1,42 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.24)
 
 project(
 	ExampleProject
 	VERSION 1.0.0
 	LANGUAGES CXX
 )
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
-	message(FATAL_ERROR "in-source builds are not allowed")
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+list(APPEND CMAKE_IGNORE_PATH "${PROJECT_BINARY_DIR}")
+list(APPEND CMAKE_MODULE_PATH
+	"${PROJECT_SOURCE_DIR}/tools/SKSE-CMakeModules/Modules"
+)
+include(SKSEPlugin)
+
+set(SKSE_USE_XBYAK OFF)
+set(SKSE_SUPPORT_VR OFF)
+
+SKSEPlugin_Add(
+	${PROJECT_NAME}
+	SOURCE_DIR src
+	SOURCES
+		.clang-format
+		.editorconfig
+		README.md
+		vcpkg.json
+	PRECOMPILE_HEADERS
+		src/common/PCH.h
+)
+
+set_target_properties(CommonLibSSE PROPERTIES
+    FOLDER External
+)
+
+set(CPACK_GENERATOR "7Z")
+set(CPACK_PACKAGE_FILE_NAME ${PROJECT_NAME}-${PROJECT_VERSION})
+if(BUILD_SKYRIMVR)
+	string(APPEND CPACK_PACKAGE_FILE_NAME "-VR")
 endif()
-
-macro(set_from_environment VARIABLE)
-	if(NOT DEFINED ${VARIABLE} AND DEFINED ENV{${VARIABLE}})
-		set(${VARIABLE} $ENV{${VARIABLE}})
-	endif()
-endmacro()
-
-set_from_environment(Skyrim64Path)
-if(NOT DEFINED Skyrim64Path)
-	message(FATAL_ERROR "Skyrim64Path is not set")
-endif()
-
-option(COPY_OUTPUT "copy the output of build operations to the game directory" OFF)
-
-list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
-
-add_subdirectory(src)
-include(cmake/packaging.cmake)
+set(CPACK_INCLUDE_TOPLEVEL_DIRECTORY FALSE)
+include(CPack)

@@ -25,21 +25,48 @@ namespace
 		log->flush_on(level);
 
 		spdlog::set_default_logger(std::move(log));
-		spdlog::set_pattern("%g(%#): [%^%l%$] %v"s);
+		spdlog::set_pattern("%s(%#): [%^%l%$] %v"s);
 	}
 }
 
-extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
-	SKSE::PluginVersionData v;
+#ifndef SKYRIMVR
+extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []()
+{
+	SKSE::PluginVersionData v{};
 
 	v.PluginVersion(Plugin::VERSION);
 	v.PluginName(Plugin::NAME);
 
 	v.UsesAddressLibrary(true);
-	v.CompatibleVersions({ SKSE::RUNTIME_LATEST });
 
 	return v;
 }();
+#endif
+
+extern "C" DLLEXPORT bool SKSEAPI
+SKSEPlugin_Query(const SKSE::QueryInterface* a_skse, SKSE::PluginInfo* a_info)
+{
+	a_info->infoVersion = SKSE::PluginInfo::kVersion;
+	a_info->name = Plugin::NAME.data();
+	a_info->version = Plugin::VERSION[0];
+
+	if (a_skse->IsEditor()) {
+		return false;
+	}
+
+	const auto ver = a_skse->RuntimeVersion();
+#ifndef SKYRIMVR
+	if (ver < SKSE::RUNTIME_1_6_1130) {
+		return false;
+	}
+#else
+	if (ver != SKSE::RUNTIME_VR_1_4_15_1) {
+		return false;
+	}
+#endif
+
+	return true;
+}
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
