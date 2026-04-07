@@ -30,7 +30,7 @@ SKSEPlugin_Add(
 )
 
 set_target_properties(CommonLibSSE PROPERTIES
-    FOLDER External
+	FOLDER External
 )
 
 set(CPACK_GENERATOR "7Z")
